@@ -13,11 +13,10 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class Script {
 
@@ -25,6 +24,8 @@ public class Script {
     private static String password;
 
     public static void main(String[] args) throws IOException, ParseException {
+
+        WebDriver driver;
 
         JSONParser parser = new JSONParser();
         Object object = parser.parse(new FileReader("src/main/resources/credentials.json"));
@@ -41,7 +42,12 @@ public class Script {
 
         for (String key : keys) {
             String filedirectory = System.getProperty("user.dir") + File.separator + "downloadFiles" + File.separator + key;
-            System.out.println(key + " : " + map.get(key));
+            String pathToFile = filedirectory + File.separator + "Confluence-export-space-" + key.toLowerCase() + ".zip";
+
+            File file = new File(pathToFile);
+            if (file.exists()) {
+                Files.deleteIfExists(Path.of(pathToFile));
+            }
 
             Map<String, Object> prefs = new HashMap<String, Object>();
             prefs.put("download.default_directory", filedirectory);
@@ -49,39 +55,43 @@ public class Script {
             ChromeOptions options = new ChromeOptions();
             options.setExperimentalOption("prefs", prefs);
 
-            WebDriver driver = new ChromeDriver(options);
+            driver = new ChromeDriver(options);
             WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
-            driver.manage().window().maximize();
+            WebDriverWait wait60 = new WebDriverWait(driver, Duration.ofSeconds(60));
 
-            driver.get((String) map.get(key));
-            wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(".//span[@data-testid='app-navigation-login']//a"))).click();
-            wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("username"))).sendKeys(username);
-            wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("login-submit"))).click();
-            wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("password"))).sendKeys(password);
-            wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("login-submit"))).click();
-            wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(".//span[text()='Space Settings']"))).click();
-            wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(".//span[text()='Export space']"))).click();
-            wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(".//input[@value='export-format-xml']"))).click();
-            wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(".//input[@value='Next >>']"))).click();
-            wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(".//input[@value='Export']"))).click();
-            wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(".//span[@id='percentComplete' and text()='100']")));
-            wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(".//a[@class='space-export-download-path']"))).click();
+            try {
+                driver.get((String) map.get(key));
+                wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("username"))).sendKeys(username);
+                wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("login-submit"))).click();
+                wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("password"))).sendKeys(password);
+                wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("login-submit"))).click();
+                wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(".//input[@value='Export']"))).click();
+                wait60.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(".//span[@id='percentComplete' and text()='100']")));
+                wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(".//a[@class='space-export-download-path']"))).click();
+            } catch (Exception e) {
+                e.printStackTrace();
+                driver.close();
+            }
 
-            File file = new File(filedirectory + File.separator + "Confluence-export-space-sfs.zip");
+            int waitInSeconds = 5;
+            int waitSteps = 120;
 
-            for (int i = 0; i < 30; i++) {
-                System.out.println("waiting for file " + i);
+            for (int i = 0; i < waitSteps; i++) {
+                System.out.println("Downloading file for space '" + key + "' Process will be aborted in " + String.valueOf(waitInSeconds * waitSteps - i * waitInSeconds) + " seconds");
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(waitInSeconds * 1000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
                 if (file.exists()) {
-                    if (driver != null) {
-                        driver.quit();
-                    }
+                    System.out.println("File for space '" + key + "' downloaded");
+                    driver.quit();
                     break;
                 }
+            }
+            if (!file.exists()) {
+                System.out.println("WARNING! Download time too long. Downloading process for space '" + key + "' aborted.");
+                driver.quit();
             }
         }
     }
