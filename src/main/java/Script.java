@@ -56,9 +56,9 @@ public class Script {
             driver.get((String) map.get(key));
             wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(".//span[@data-testid='app-navigation-login']//a"))).click();
             wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("username"))).sendKeys(username);
-            wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(".//span[text()='Continue']"))).click();
+            wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("login-submit"))).click();
             wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("password"))).sendKeys(password);
-            wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(".//span[text()='Log in']"))).click();
+            wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("login-submit"))).click();
             wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(".//span[text()='Space Settings']"))).click();
             wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(".//span[text()='Export space']"))).click();
             wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(".//input[@value='export-format-xml']"))).click();
