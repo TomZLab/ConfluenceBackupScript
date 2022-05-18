@@ -71,11 +71,11 @@ public class Script {
             } catch (Exception e) {
                 e.printStackTrace();
                 driver.close();
+                throw e;
             }
 
             int waitInSeconds = 5;
             int waitSteps = 120;
-
             for (int i = 0; i < waitSteps; i++) {
                 System.out.println("Downloading file for space '" + key + "' Process will be aborted in " + String.valueOf(waitInSeconds * waitSteps - i * waitInSeconds) + " seconds");
                 try {
